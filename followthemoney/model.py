@@ -1,13 +1,16 @@
 import os
 import yaml
-from typing import Dict, Union, Set, Optional, Any, Mapping
+from typing import Dict, Union, Set, Optional, Any
 
 from followthemoney.types import registry
 from followthemoney.schema import Schema
 from followthemoney.property import Property
 from followthemoney.mapping import QueryMapping
 from followthemoney.proxy import EntityProxy
+from followthemoney.util import ProxyData
 from followthemoney.exc import InvalidModel, InvalidData
+
+SchemaName = Union[str, Schema]
 
 
 class Model(object):
@@ -41,7 +44,7 @@ class Model(object):
             for name, config in data.items():
                 self.schemata[name] = Schema(self, name, config)
 
-    def get(self, name: Union[str, Schema]) -> Optional[Schema]:
+    def get(self, name: SchemaName) -> Optional[Schema]:
         if isinstance(name, Schema):
             return name
         return self.schemata.get(name)
@@ -75,7 +78,7 @@ class Model(object):
             for entity in q_mapping.map(record).values():
                 yield entity
 
-    def common_schema(self, left: Union[str, Schema], right: Union[str, Schema]) -> Schema:
+    def common_schema(self, left: SchemaName, right: SchemaName) -> Schema:
         """Select the most narrow of two schemata.
 
         When indexing data from a dataset, an entity may be declared as a
@@ -110,10 +113,10 @@ class Model(object):
                 specific = schema
         return specific
 
-    def make_entity(self, schema: Union[str, Schema], key_prefix=None) -> EntityProxy:
+    def make_entity(self, schema: SchemaName, key_prefix=None) -> EntityProxy:
         return EntityProxy(self, {'schema': schema}, key_prefix=key_prefix)
 
-    def get_proxy(self, data: Mapping, cleaned=True) -> EntityProxy:
+    def get_proxy(self, data: ProxyData, cleaned=True) -> EntityProxy:
         return EntityProxy.from_dict(self, data, cleaned=cleaned)
 
     def to_dict(self) -> Dict[str, Any]:
